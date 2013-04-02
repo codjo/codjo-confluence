@@ -1,8 +1,15 @@
 package net.codjo.confluence.plugin;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import net.codjo.agent.AgentContainer;
 import net.codjo.agent.ContainerConfiguration;
 import net.codjo.confluence.Attachment;
+import net.codjo.confluence.BlogEntry;
 import net.codjo.confluence.ConfluenceException;
 import net.codjo.confluence.ConfluenceServer;
 import net.codjo.confluence.ConfluenceSession;
@@ -13,12 +20,6 @@ import net.codjo.confluence.PageSummary;
 import net.codjo.confluence.SearchCriteria;
 import net.codjo.confluence.SearchResult;
 import net.codjo.plugin.common.ApplicationPlugin;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 public class ConfluencePlugin implements ApplicationPlugin {
 
@@ -139,6 +140,31 @@ public class ConfluencePlugin implements ApplicationPlugin {
         }
 
 
+        public List<BlogEntry> getBlogEntriesByLabel(final String spaceKey, final String label)
+              throws ConfluenceException {
+            final List<BlogEntry> list = new ArrayList<BlogEntry>();
+            new RunWithRetry<SearchResult>(getServer()) {
+
+                @Override
+                public List<SearchResult> prepare() throws ConfluenceException {
+                    return server.searchByLabelName(label);
+                }
+
+
+                @Override
+                public void iterate(SearchResult searchResult) throws ConfluenceException {
+                    if ("blogpost".equals(searchResult.getType())) {
+                        BlogEntry blogEntry = getServer().getBlogEntry(searchResult.getId());
+                        if (blogEntry.getSpaceKey().equals(spaceKey)) {
+                            list.add(blogEntry);
+                        }
+                    }
+                }
+            }.run();
+            return list;
+        }
+
+
         public List<PageSummary> getChildren(String pageId) throws ConfluenceException {
             getServer().login();
             List<PageSummary> pageSummaries = getServer().getChildren(pageId);
@@ -149,9 +175,17 @@ public class ConfluencePlugin implements ApplicationPlugin {
 
         public List<SearchResult> searchByCriteria(String spaceKey, SearchCriteria criteria, int maxResults)
               throws ConfluenceException {
+            return searchByCriteria(spaceKey, "page", criteria, maxResults);
+        }
+
+
+        public List<SearchResult> searchByCriteria(String spaceKey,
+                                                   String type,
+                                                   SearchCriteria searchCriteria,
+                                                   int maxResults) throws ConfluenceException {
             getServer().login();
             List<SearchResult> searchResults = getServer()
-                  .search(spaceKey, criteria.toLuceneString(), maxResults);
+                  .search(spaceKey, type, searchCriteria.toLuceneString(), maxResults);
             getServer().logout();
             return searchResults;
         }
@@ -305,6 +339,45 @@ public class ConfluencePlugin implements ApplicationPlugin {
             File file = getServer().downloadAttachment(pageId, attachmentName, directory);
             getServer().logout();
             return file;
+        }
+
+
+        public BlogEntry createBlogEntry(String spaceKey, String title, Map<String, String> metadata, String content)
+              throws ConfluenceException {
+            getServer().login();
+            BlogEntry newBlogEntry = new BlogEntry();
+            newBlogEntry.setSpaceKey(spaceKey);
+            newBlogEntry.setTitle(title);
+            newBlogEntry.setContent(buildPageContent(metadata, content));
+            BlogEntry page = getServer().storeBlogEntry(newBlogEntry);
+            getServer().logout();
+            return page;
+        }
+
+
+        public BlogEntry getBlogEntry(String spaceKey, String blogEntryTitle) throws ConfluenceException {
+            getServer().login();
+            BlogEntry blogEntry = null;
+            try {
+                blogEntry = getServer().getBlogEntry(spaceKey, blogEntryTitle);
+            }
+            catch (ConfluenceException exception) {
+                if (!exception.getLocalizedMessage().contains("does not exist")) {
+                    throw exception;
+                }
+            }
+            getServer().logout();
+            return blogEntry;
+        }
+
+
+        public void deleteBlogEntry(String blogId) throws ConfluenceException {
+            getServer().login();
+            BlogEntry blogEntry = getServer().getBlogEntry(blogId);
+            if (blogEntry != null) {
+                getServer().removeBlogEntry(blogEntry);
+            }
+            getServer().logout();
         }
 
 

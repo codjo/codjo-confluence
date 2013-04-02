@@ -1,16 +1,17 @@
 package net.codjo.confluence.plugin;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import net.codjo.confluence.Attachment;
+import net.codjo.confluence.BlogEntry;
 import net.codjo.confluence.ConfluenceException;
 import net.codjo.confluence.Label;
 import net.codjo.confluence.Page;
 import net.codjo.confluence.PageSummary;
 import net.codjo.confluence.SearchCriteria;
 import net.codjo.confluence.SearchResult;
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 
 public interface ConfluenceOperations {
     Page getPage(String spaceKey, String pageTitle) throws ConfluenceException;
@@ -37,9 +38,13 @@ public interface ConfluenceOperations {
 
     List<Page> getPagesByLabel(String spaceKey, String label) throws ConfluenceException;
 
+    List<BlogEntry> getBlogEntriesByLabel(String spaceKey, String label) throws ConfluenceException;
+
     List<PageSummary> getChildren(String pageId) throws ConfluenceException;
 
     List<SearchResult> searchByCriteria(String spaceKey, SearchCriteria searchCriteria, int maxResults) throws ConfluenceException;
+
+    List<SearchResult> searchByCriteria(String spaceKey, String type, SearchCriteria searchCriteria, int maxResults) throws ConfluenceException;
 
     List<Page> searchPagesByCriteria(String spaceKey, SearchCriteria searchCriteria, int maxResults) throws ConfluenceException;
 
@@ -54,4 +59,10 @@ public interface ConfluenceOperations {
     void removeLabelByName(String objectId, String labelName) throws ConfluenceException;
 
     void removeLabelByName(String labelName) throws ConfluenceException;
+
+    BlogEntry createBlogEntry(String spaceKey, String title, Map<String, String> metadata, String content) throws ConfluenceException;
+
+    BlogEntry getBlogEntry(String spaceKey, String blogEntryTitle) throws ConfluenceException;
+
+    void deleteBlogEntry(String blogId) throws ConfluenceException;
 }
