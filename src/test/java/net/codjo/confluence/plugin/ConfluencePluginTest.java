@@ -1,6 +1,7 @@
 package net.codjo.confluence.plugin;
 
 import net.codjo.confluence.Attachment;
+import net.codjo.confluence.BlogEntry;
 import net.codjo.confluence.ConfluenceException;
 import net.codjo.confluence.ConfluenceServer;
 import net.codjo.confluence.ConfluenceTimeoutException;
@@ -27,6 +28,7 @@ public class ConfluencePluginTest extends TestCase {
 
     private ConfluenceOperations confluenceOperations;
     private ConfluencePlugin plugin;
+    private static final String NEW_BLOG_ENTRY_TITLE = "blogTitle";
 
 
     public void test_deletePage() throws Exception {
@@ -76,6 +78,18 @@ public class ConfluencePluginTest extends TestCase {
         Page searchedPage = confluenceOperations.getPage(SPACE_KEY, NEW_PAGE_TITLE);
         assertNotNull(searchedPage);
         assertTrue(searchedPage.getContent().contains("Hi there"));
+    }
+
+    public void test_operations_createBlogEntry() throws Exception {
+        Map<String, String> map = new HashMap<String, String>();
+        map.put("cle1", "val1");
+        map.put("cle2", "val2");
+
+        confluenceOperations.createBlogEntry(SPACE_KEY, NEW_BLOG_ENTRY_TITLE, map, "Hi there");
+
+        BlogEntry blogEntry = confluenceOperations.getBlogEntry(SPACE_KEY, NEW_BLOG_ENTRY_TITLE);
+        assertNotNull(blogEntry);
+        assertTrue(blogEntry.getContent().contains("Hi there"));
     }
 
 
@@ -270,6 +284,10 @@ public class ConfluencePluginTest extends TestCase {
         Page child = confluenceOperations.getPage(SPACE_KEY, CHILD_PAGE_TITLE);
         if (child != null) {
             confluenceOperations.deletePage(child.getId());
+        }
+        BlogEntry blogEntry = confluenceOperations.getBlogEntry(SPACE_KEY, NEW_BLOG_ENTRY_TITLE);
+        if (blogEntry != null) {
+            confluenceOperations.deleteBlogEntry(blogEntry.getId());
         }
     }
 }
