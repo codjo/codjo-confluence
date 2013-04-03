@@ -1,9 +1,5 @@
 package net.codjo.confluence;
 
-import net.codjo.test.common.Directory;
-import net.codjo.test.common.FileComparator;
-import net.codjo.test.common.PathUtil;
-import net.codjo.util.file.FileUtil;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -13,8 +9,13 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import junit.framework.TestCase;
+import net.codjo.test.common.Directory;
+import net.codjo.test.common.FileComparator;
+import net.codjo.test.common.PathUtil;
+import net.codjo.util.file.FileUtil;
 import org.apache.xmlrpc.XmlRpcException;
 import org.apache.xmlrpc.client.XmlRpcClient;
+
 import static org.mockito.Mockito.anyObject;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.mock;
@@ -32,6 +33,7 @@ public class ConfluenceServerTest extends TestCase {
     private static final String FIRST_CHILD_TITLE = "first child test";
     private static final String SECOND_CHILD_TITLE = "second child test";
     private static final String SPACE_KEY = "sandbox";
+    private static final String TEST_BLOG_ENTRY_TITLE = "ConfluenceServerBlogEntryTest";
 
 
     @Override
@@ -46,6 +48,7 @@ public class ConfluenceServerTest extends TestCase {
         removePage(TEST_PAGE2_TITLE);
         removePage(FIRST_CHILD_TITLE);
         removePage(SECOND_CHILD_TITLE);
+        removeBlogEntry(TEST_BLOG_ENTRY_TITLE);
         server.logout();
     }
 
@@ -71,6 +74,16 @@ public class ConfluenceServerTest extends TestCase {
         assertNotNull(page.getId());
         assertThat(server.getAllPageSummaries(new Space(SPACE_KEY)), containsPageSummary(TEST_PAGE_TITLE));
         assertEquals(newPage.getContent(), server.getPage(page.getId()).getContent());
+    }
+
+
+    public void test_storeBlogEntry() throws Exception {
+        BlogEntry newPage = createBlogEntry();
+        newPage.setContent("*Blog temporaire pour un [TestUnitaire] avec caractères accentués.*");
+        BlogEntry page = server.storeBlogEntry(newPage);
+
+        assertNotNull(page.getId());
+        assertEquals(newPage.getContent(), server.getBlogEntry(page.getId()).getContent());
     }
 
 
@@ -153,8 +166,8 @@ public class ConfluenceServerTest extends TestCase {
 
 
     /**
-     * Test désactivé car l'indexation nécessaire à la recherche prend environ 30 secondes ce qui est trop
-     * long pour un TU.
+     * Test désactivé car l'indexation nécessaire à la recherche prend environ 30 secondes ce qui est trop long pour un
+     * TU.
      */
     public void search() throws Exception {
         Page newPage = createPage();
@@ -476,6 +489,27 @@ public class ConfluenceServerTest extends TestCase {
         newPage.setSpaceKey(SPACE_KEY);
         newPage.setTitle(TEST_PAGE_TITLE);
         return newPage;
+    }
+
+
+    private BlogEntry createBlogEntry() {
+        BlogEntry newBlogEntry = new BlogEntry();
+        newBlogEntry.setSpaceKey(SPACE_KEY);
+        newBlogEntry.setTitle(TEST_BLOG_ENTRY_TITLE);
+        return newBlogEntry;
+    }
+
+
+    private void removeBlogEntry(String blogEntryTitle) {
+        try {
+            BlogEntry blogEntry = server.getBlogEntry(SPACE_KEY, blogEntryTitle);
+            if (blogEntry != null) {
+                server.removeBlogEntry(blogEntry);
+            }
+        }
+        catch (Throwable exception) {
+            ;
+        }
     }
 
 

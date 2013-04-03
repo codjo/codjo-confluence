@@ -8,6 +8,7 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -177,7 +178,7 @@ public class ConfluenceServer {
 
     public Page storePage(Page page) throws ConfluenceException {
         return new Page((Map<String, String>)
-              executeRemoteCall("confluence1.storePage", 0, token(), page.getConfluenceStructure()));
+                              executeRemoteCall("confluence1.storePage", 0, token(), page.getConfluenceStructure()));
     }
 
 
@@ -188,9 +189,15 @@ public class ConfluenceServer {
 
     public List<SearchResult> search(String spaceKey, String queryString, int nbResults)
           throws ConfluenceException {
+        return search(spaceKey, "page", queryString, nbResults);
+    }
+
+
+    public List<SearchResult> search(String spaceKey, String type, String queryString, int nbResults)
+          throws ConfluenceException {
         Map<String, String> parameters = new HashMap<String, String>();
         parameters.put("spaceKey", spaceKey);
-        parameters.put("type", "page");
+        parameters.put("type", type);
         Object[] pages = (Object[])executeRemoteCall("confluence1.search", 0, token(), queryString,
                                                      parameters,
                                                      nbResults);
@@ -275,6 +282,40 @@ public class ConfluenceServer {
     }
 
 
+    public BlogEntry storeBlogEntry(BlogEntry newBlogEntry) throws ConfluenceException {
+        return new BlogEntry((Map<String, String>)
+                                   executeRemoteCall("confluence1.storeBlogEntry",
+                                                     0,
+                                                     token(),
+                                                     newBlogEntry.getConfluenceStructure()));
+    }
+
+
+    public BlogEntry getBlogEntry(String spaceKey, String blogEntryTitle) throws ConfluenceException {
+        Object[] blogEntries = (Object[])executeRemoteCall("confluence1.getBlogEntries", 0, token(), spaceKey);
+
+        for (Object page : blogEntries) {
+            final BlogEntrySummary blogEntrySummary = new BlogEntrySummary((Map<String, Object>)page);
+            if (blogEntrySummary.getTitle().equals(blogEntryTitle)) {
+                return getBlogEntry(blogEntrySummary.getId());
+            }
+        }
+        return null;
+    }
+
+
+    public BlogEntry getBlogEntry(String blogId) throws ConfluenceException {
+        Map<String, String> blogEntry = (Map<String, String>)
+              executeRemoteCall("confluence1.getBlogEntry", 0, token(), blogId);
+        return new BlogEntry(blogEntry);
+    }
+
+
+    public void removeBlogEntry(BlogEntry blogEntry) throws ConfluenceException {
+        executeRemoteCall("confluence1.removePage", 0, token(), blogEntry.getId());
+    }
+
+
     public String renderPage(String spaceKey, String pageId, String content) throws ConfluenceException {
         return (String)executeRemoteCall("confluence1.renderContent", 0, token(), spaceKey, pageId, content);
     }
@@ -335,9 +376,7 @@ public class ConfluenceServer {
 
     private List<Object> arguments(Object... arguments) {
         List<Object> args = new ArrayList<Object>();
-        for (Object argument : arguments) {
-            args.add(argument);
-        }
+        Collections.addAll(args, arguments);
         return args;
     }
 
