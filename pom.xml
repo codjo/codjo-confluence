@@ -13,7 +13,7 @@
     </parent>
     <groupId>net.codjo.confluence</groupId>
     <artifactId>codjo-confluence</artifactId>
-    <version>1.27-SNAPSHOT</version>
+    <version>1.27</version>
     <dependencies>
         <dependency>
             <groupId>javax.activation</groupId>
