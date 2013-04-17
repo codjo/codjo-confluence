@@ -9,7 +9,7 @@
     <parent>
         <groupId>net.codjo.pom</groupId>
         <artifactId>codjo-pom-library</artifactId>
-        <version>2.44</version>
+        <version>SNAPSHOT</version>
     </parent>
     <groupId>net.codjo.confluence</groupId>
     <artifactId>codjo-confluence</artifactId>
